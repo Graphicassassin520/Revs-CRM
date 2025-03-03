@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timeshare Sales Tracker</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #ffffff;
+            --card-bg: #1f1f1f;
+            --accent-color: #ff0000; /* Neon red */
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        nav {
+            background-color: var(--card-bg);
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        nav .logo img {
+            height: 50px; /* Adjust based on logo size */
+            width: auto;
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+        }
+        nav ul li {
+            margin-right: 20px;
+        }
+        nav ul li a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+        nav ul li a:hover {
+            color: #ff6666; /* Lighter red for hover effect */
+            text-shadow: 0 0 5px #ff0000;
+        }
+        main {
+            position: relative;
+            padding: 20px;
+        }
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            max-width: 300px;
+            margin-bottom: 20px;
+        }
+        form label {
+            margin-top: 10px;
+        }
+        form input, form select {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--accent-color);
+            padding: 5px;
+            border-radius: 5px;
+        }
+        form button {
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        form button:hover {
+            background-color: #cc0000; /* Darker red for hover */
+        }
+        .kanban-board {
+            display: flex;
+            justify-content: space-between;
+        }
+        .column {
+            background-color: var(--card-bg);
+            padding: 10px;
+            border-radius: 10px;
+            width: 30%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        .tasks {
+            min-height: 100px;
+        }
+        .task-card {
+            background-color: var(--card-bg);
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            cursor: grab;
+        }
+        .task-card:active {
+            cursor: grabbing;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        ul li {
+            background-color: var(--card-bg);
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        ul button {
+            background-color: #ff4081;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        ul button:hover {
+            background-color: #c51162;
+        }
+        #notifications {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #ff4081;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+        }
+        #notifications.active {
+            transform: translateY(0);
+        }
+        #taskSearch, #saleSearch, #customerSearch {
+            width: 100%;
+            max-width: 300px;
+            margin-bottom: 10px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--accent-color);
+            padding: 5px;
+            border-radius: 5px;
+        }
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            nav .logo img {
+                height: 40px; /* Smaller logo for mobile */
+            }
+            nav ul {
+                flex-direction: column;
+                width: 100%;
+            }
+            nav ul li {
+                margin-bottom: 10px;
+            }
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            .kanban-board {
+                flex-direction: column;
+            }
+            .column {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="logo">
+            <a href="#dashboard"><img src="logo.png" alt="Real Estate Vacation Store Logo"></a>
+        </div>
+        <ul>
+            <li><a href="#dashboard">Dashboard</a></li>
+            <li><a href="#tasks">Tasks</a></li>
+            <li><a href="#sales">Sales</a></li>
+            <li><a href="#customers">Customers</a></li>
+            <li><a href="#settings">Settings</a></li>
+        </ul>
+    </nav>
+    <main>
+        <div id="notifications"></div>
+        <section id="dashboard" class="section active">
+            <h2>Dashboard</h2>
+            <div class="dashboard-grid">
+                <div class="card">
+                    <h3>Today's Sales</h3>
+                    <p id="todaySales">$0</p>
+                </div>
+                <div class="card">
+                    <h3>Pending Tasks</h3>
+                    <p id="pendingTasks">0</p>
+                </div>
+                <div class="card">
+                    <canvas id="salesChart"></canvas>
+                </div>
+                <div class="card">
+                    <canvas id="taskChart"></canvas>
+                </div>
+            </div>
+        </section>
+        <section id="tasks" class="section">
+            <h2>Tasks</h2>
+            <input type="text" id="taskSearch" placeholder="Search tasks...">
+            <form id="taskForm">
+                <label for="taskDesc">Description:</label>
+                <input type="text" id="taskDesc" required>
+                <label for="taskDue">Due Date:</label>
+                <input type="date" id="taskDue" required>
+                <label for="taskPriority">Priority:</label>
+                <select id="taskPriority">
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                </select>
+                <label for="taskCustomer">Customer:</label>
+                <select id="taskCustomer">
+                    <option value="">No Customer</option>
+                    <!-- Populated via JavaScript -->
+                </select>
+                <button type="submit">Add Task</button>
+            </form>
+            <div class="kanban-board">
+                <div class="column" id="to-do">
+                    <h3>To Do</h3>
+                    <div class="tasks"></div>
+                </div>
+                <div class="column" id="in-progress">
+                    <h3>In Progress</h3>
+                    <div class="tasks"></div>
+                </div>
+                <div class="column" id="completed">
+                    <h3>Completed</h3>
+                    <div class="tasks"></div>
+                </div>
+            </div>
+        </section>
+        <section id="sales" class="section">
+            <h2>Sales</h2>
+            <input type="text" id="saleSearch" placeholder="Search sales...">
+            <form id="saleForm">
+                <label for="clientName">Client Name:</label>
+                <input type="text" id="clientName" required>
+                <label for="saleAmount">Amount:</label>
+                <input type="number" id="saleAmount" required>
+                <label for="saleDate">Date:</label>
+                <input type="date" id="saleDate" required>
+                <label for="saleCustomer">Customer:</label>
+                <select id="saleCustomer">
+                    <option value="">No Customer</option>
+                    <!-- Populated via JavaScript -->
+                </select>
+                <button type="submit">Add Sale</button>
+            </form>
+            <ul id="saleList"></ul>
+        </section>
+        <section id="customers" class="section">
+            <h2>Customers</h2>
+            <input type="text" id="customerSearch" placeholder="Search customers...">
+            <form id="customerForm">
+                <label for="customerName">Name:</label>
+                <input type="text" id="customerName" required>
+                <label for="customerEmail">Email:</label>
+                <input type="email" id="customerEmail" required>
+                <label for="customerPhone">Phone:</label>
+                <input type="tel" id="customerPhone" required>
+                <button type="submit">Add Customer</button>
+            </form>
+            <ul id="customerList"></ul>
+        </section>
+        <section id="settings" class="section">
+            <h2>Settings</h2>
+            <div>
+                <label for="theme">Theme:</label>
+                <select id="theme">
+                    <option value="dark">Dark</option>
+                    <option value="light">Light</option>
+                </select>
+            </div>
+        </section>
+    </main>
+    <script>
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let sales = JSON.parse(localStorage.getItem('sales')) || [];
+        let customers = JSON.parse(localStorage.getItem('customers')) || [];
+        let salesChart;
+        let taskChart;
+
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function saveSales() {
+            localStorage.setItem('sales', JSON.stringify(sales));
+        }
+
+        function saveCustomers() {
+            localStorage.setItem('customers', JSON.stringify(customers));
+        }
+
+        function getToday() {
+            const today = new Date();
+            return today.toISOString().split('T')[0];
+        }
+
+        function getPastWeekDates() {
+            const dates = [];
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                dates.push(date.toISOString().split('T')[0]);
+            }
+            return dates;
+        }
+
+        function renderDashboard() {
+            const today = getToday();
+            const todaySales = sales.filter(sale => sale.date === today).reduce((total, sale) => total + parseFloat(sale.amount), 0);
+            document.getElementById('todaySales').textContent = `$${todaySales.toFixed(2)}`;
+            const pendingTasks = tasks.filter(task => task.status !== 'completed').length;
+            document.getElementById('pendingTasks').textContent = pendingTasks;
+            const pastWeekDates = getPastWeekDates();
+            const salesData = pastWeekDates.map(date => {
+                return sales.filter(sale => sale.date === date).reduce((total, sale) => total + parseFloat(sale.amount), 0);
+            });
+            salesChart.data.labels = pastWeekDates;
+            salesChart.data.datasets[0].data = salesData;
+            salesChart.update();
+            const taskCounts = ['to do', 'in progress', 'completed'].map(status => tasks.filter(task => task.status === status).length);
+            taskChart.data.datasets[0].data = taskCounts;
+            taskChart.update();
+            checkNotifications();
+        }
+
+        function renderTasks(filter = '') {
+            const filteredTasks = filter ? tasks.filter(task => task.description.toLowerCase().includes(filter.toLowerCase())) : tasks;
+            const columns = {
+                'to do': document.querySelector('#to-do .tasks'),
+                'in progress': document.querySelector('#in-progress .tasks'),
+                'completed': document.querySelector('#completed .tasks')
+            };
+            for (let status in columns) {
+                columns[status].innerHTML = '';
+            }
+            filteredTasks.forEach(task => {
+                const customer = customers.find(c => c.id == task.customerId);
+                const customerName = customer ? customer.name : 'No Customer';
+                const taskCard = document.createElement('div');
+                taskCard.className = 'task-card';
+                taskCard.draggable = true;
+                const contentDiv = document.createElement('div');
+                contentDiv.textContent = `${task.description} - Due: ${task.dueDate} - Priority: ${task.priority} - Customer: ${customerName}`;
+                taskCard.appendChild(contentDiv);
+                const buttonDiv = document.createElement('div');
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Edit';
+                let descriptionInput, dueDateInput, prioritySelect, customerSelect;
+                editBtn.addEventListener('click', () => {
+                    if (editBtn.textContent === 'Edit') {
+                        descriptionInput = document.createElement('input');
+                        descriptionInput.type = 'text';
+                        descriptionInput.value = task.description;
+                        dueDateInput = document.createElement('input');
+                        dueDateInput.type = 'date';
+                        dueDateInput.value = task.dueDate;
+                        prioritySelect = document.createElement('select');
+                        ['low', 'medium', 'high'].forEach(p => {
+                            const option = document.createElement('option');
+                            option.value = p;
+                            option.textContent = p;
+                            if (p === task.priority) option.selected = true;
+                            prioritySelect.appendChild(option);
+                        });
+                        customerSelect = document.createElement('select');
+                        const noCustomerOption = document.createElement('option');
+                        noCustomerOption.value = '';
+                        noCustomerOption.textContent = 'No Customer';
+                        customerSelect.appendChild(noCustomerOption);
+                        customers.forEach(c => {
+                            const option = document.createElement('option');
+                            option.value = c.id;
+                            option.textContent = c.name;
+                            if (c.id == task.customerId) option.selected = true;
+                            customerSelect.appendChild(option);
+                        });
+                        contentDiv.innerHTML = '';
+                        contentDiv.appendChild(descriptionInput);
+                        contentDiv.appendChild(dueDateInput);
+                        contentDiv.appendChild(prioritySelect);
+                        contentDiv.appendChild(customerSelect);
+                        editBtn.textContent = 'Save';
+                        taskCard.draggable = false;
+                    } else {
+                        task.description = descriptionInput.value;
+                        task.dueDate = dueDateInput.value;
+                        task.priority = prioritySelect.value;
+                        task.customerId = customerSelect.value ? parseInt(customerSelect.value) : null;
+                        saveTasks();
+                        renderTasks(filter);
+                        renderDashboard();
+                    }
+                });
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.addEventListener('click', () => {
+                    if (confirm('Are you sure you want to delete this task?')) {
+                        tasks = tasks.filter(t => t.id !== task.id);
+                        saveTasks();
+                        renderTasks(filter);
+                        renderDashboard();
+                    }
+                });
+                buttonDiv.appendChild(editBtn);
+                buttonDiv.appendChild(deleteBtn);
+                taskCard.appendChild(buttonDiv);
+                taskCard.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', task.id);
+                });
+                columns[task.status].appendChild(taskCard);
+            });
+            for (let status in columns) {
+                columns[status].parentElement.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+                columns[status].parentElement.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const id = e.dataTransfer.getData('text/plain');
+                    const task = tasks.find(t => t.id == id);
+                    if (task) {
+                        task.status = status;
+                        saveTasks();
+                        renderTasks(filter);
+                        renderDashboard();
+                    }
+                });
+            }
+        }
+
+        function renderSales(filter = '') {
+            const filteredSales = filter ? sales.filter(sale => {
+                const customer = customers.find(c => c.id == sale.customerId);
+                const customerName = customer ? customer.name : '';
+                return customerName.toLowerCase().includes(filter.toLowerCase()) || sale.date.includes(filter);
+            }) : sales;
+            const saleList = document.getElementById('saleList');
+            saleList.innerHTML = '';
+            filteredSales.forEach(sale => {
+                const customer = customers.find(c => c.id == sale.customerId);
+                const customerName = customer ? customer.name : 'No Customer';
+                const li = document.createElement('li');
+                const contentSpan = document.createElement('span');
+                contentSpan.textContent = `${customerName} - $${sale.amount} - ${sale.date}`;
+                li.appendChild(contentSpan);
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Edit';
+                let amountInput, dateInput, customerSelect;
+                editBtn.addEventListener('click', () => {
+                    if (editBtn.textContent === 'Edit') {
+                        amountInput = document.createElement('input');
+                        amountInput.type = 'number';
+                        amountInput.value = sale.amount;
+                        dateInput = document.createElement('input');
+                        dateInput.type = 'date';
+                        dateInput.value = sale.date;
+                        customerSelect = document.createElement('select');
+                        const noCustomerOption = document.createElement('option');
+                        noCustomerOption.value = '';
+                        noCustomerOption.textContent = 'No Customer';
+                        customerSelect.appendChild(noCustomerOption);
+                        customers.forEach(c => {
+                            const option = document.createElement('option');
+                            option.value = c.id;
+                            option.textContent = c.name;
+                            if (c.id == sale.customerId) option.selected = true;
+                            customerSelect.appendChild(option);
+                        });
+                        contentSpan.innerHTML = '';
+                        contentSpan.appendChild(amountInput);
+                        contentSpan.appendChild(dateInput);
+                        contentSpan.appendChild(customerSelect);
+                        editBtn.textContent = 'Save';
+                    } else {
+                        sale.amount = amountInput.value;
+                        sale.date = dateInput.value;
+                        sale.customerId = customerSelect.value ? parseInt(customerSelect.value) : null;
+                        saveSales();
+                        renderSales(filter);
+                        renderDashboard();
+                    }
+                });
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.addEventListener('click', () => {
+                    if (confirm('Are you sure you want to delete this sale?')) {
+                        sales = sales.filter(s => s.id !== sale.id);
+                        saveSales();
+                        renderSales(filter);
+                        renderDashboard();
+                    }
+                });
+                li.appendChild(editBtn);
+                li.appendChild(deleteBtn);
+                saleList.appendChild(li);
+            });
+        }
+
+        function renderCustomers(filter = '') {
+            const filteredCustomers = filter ? customers.filter(c => c.name.toLowerCase().includes(filter.toLowerCase())) : customers;
+            const customerList = document.getElementById('customerList');
+            customerList.innerHTML = '';
+            filteredCustomers.forEach(customer => {
+                const li = document.createElement('li');
+                const contentSpan = document.createElement('span');
+                contentSpan.textContent = `${customer.name} - ${customer.email} - ${customer.phone}`;
+                li.appendChild(contentSpan);
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Edit';
+                let nameInput, emailInput, phoneInput;
+                editBtn.addEventListener('click', () => {
+                    if (editBtn.textContent === 'Edit') {
+                        nameInput = document.createElement('input');
+                        nameInput.type = 'text';
+                        nameInput.value = customer.name;
+                        emailInput = document.createElement('input');
+                        emailInput.type = 'email';
+                        emailInput.value = customer.email;
+                        phoneInput = document.createElement('input');
+                        phoneInput.type = 'tel';
+                        phoneInput.value = customer.phone;
+                        contentSpan.innerHTML = '';
+                        contentSpan.appendChild(nameInput);
+                        contentSpan.appendChild(emailInput);
+                        contentSpan.appendChild(phoneInput);
+                        editBtn.textContent = 'Save';
+                    } else {
+                        customer.name = nameInput.value;
+                        customer.email = emailInput.value;
+                        customer.phone = phoneInput.value;
+                        saveCustomers();
+                        renderCustomers(filter);
+                        updateCustomerSelects();
+                    }
+                });
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.addEventListener('click', () => {
+                    if (confirm('Are you sure you want to delete this customer?')) {
+                        customers = customers.filter(c => c.id !== customer.id);
+                        saveCustomers();
+                        renderCustomers(filter);
+                        updateCustomerSelects();
+                    }
+                });
+                li.appendChild(editBtn);
+                li.appendChild(deleteBtn);
+                customerList.appendChild(li);
+            });
+        }
+
+        function updateCustomerSelects() {
+            const selects = [document.getElementById('taskCustomer'), document.getElementById('saleCustomer')];
+            selects.forEach(select => {
+                select.innerHTML = '<option value="">No Customer</option>';
+                customers.forEach(customer => {
+                    const option = document.createElement('option');
+                    option.value = customer.id;
+                    option.textContent = customer.name;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        function checkNotifications() {
+            const today = getToday();
+            const overdueTasks = tasks.filter(task => task.dueDate < today && task.status !== 'completed');
+            const dueTodayTasks = tasks.filter(task => task.dueDate === today && task.status !== 'completed');
+            let notificationText = '';
+            if (overdueTasks.length > 0) {
+                notificationText += `You have ${overdueTasks.length} overdue tasks.`;
+            }
+            if (dueTodayTasks.length > 0) {
+                notificationText += ` You have ${dueTodayTasks.length} tasks due today.`;
+            }
+            const notificationsDiv = document.getElementById('notifications');
+            if (notificationText) {
+                notificationsDiv.textContent = notificationText;
+                notificationsDiv.classList.add('active');
+            } else {
+                notificationsDiv.classList.remove('active');
+            }
+        }
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+            if (sectionId === 'dashboard') {
+                renderDashboard();
+            } else if (sectionId === 'tasks') {
+                renderTasks();
+            } else if (sectionId === 'sales') {
+                renderSales();
+            } else if (sectionId === 'customers') {
+                renderCustomers();
+            }
+        }
+
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const sectionId = link.getAttribute('href').substring(1);
+                window.location.hash = sectionId;
+            });
+        });
+
+        window.addEventListener('hashchange', () => {
+            const sectionId = window.location.hash.substring(1) || 'dashboard';
+            showSection(sectionId);
+        });
+
+        document.getElementById('taskForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const description = document.getElementById('taskDesc').value;
+            const dueDate = document.getElementById('taskDue').value;
+            const priority = document.getElementById('taskPriority').value;
+            const customerId = document.getElementById('taskCustomer').value ? parseInt(document.getElementById('taskCustomer').value) : null;
+            const task = {
+                id: Date.now(),
+                description,
+                dueDate,
+                priority,
+                status: 'to do',
+                customerId
+            };
+            tasks.push(task);
+            saveTasks();
+            renderTasks();
+            renderDashboard();
+            checkNotifications();
+            document.getElementById('taskForm').reset();
+        });
+
+        document.getElementById('saleForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const clientName = document.getElementById('clientName').value;
+            const amount = document.getElementById('saleAmount').value;
+            const date = document.getElementById('saleDate').value;
+            const customerId = document.getElementById('saleCustomer').value ? parseInt(document.getElementById('saleCustomer').value) : null;
+            const sale = {
+                id: Date.now(),
+                clientName,
+                amount,
+                date,
+                customerId
+            };
+            sales.push(sale);
+            saveSales();
+            const followUpDate = new Date(date);
+            followUpDate.setDate(followUpDate.getDate() + 7);
+            const followUpDueDate = followUpDate.toISOString().split('T')[0];
+            const followUpTask = {
+                id: Date.now() + 1,
+                description: `Follow up with ${clientName}`,
+                dueDate: followUpDueDate,
+                priority: 'medium',
+                status: 'to do',
+                customerId
+            };
+            tasks.push(followUpTask);
+            saveTasks();
+            renderSales();
+            renderTasks();
+            renderDashboard();
+            checkNotifications();
+            document.getElementById('saleForm').reset();
+        });
+
+        document.getElementById('customerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('customerName').value;
+            const email = document.getElementById('customerEmail').value;
+            const phone = document.getElementById('customerPhone').value;
+            const customer = {
+                id: Date.now(),
+                name,
+                email,
+                phone
+            };
+            customers.push(customer);
+            saveCustomers();
+            renderCustomers();
+            updateCustomerSelects();
+            document.getElementById('customerForm').reset();
+        });
+
+        document.getElementById('taskSearch').addEventListener('input', (e) => {
+            renderTasks(e.target.value);
+        });
+
+        document.getElementById('saleSearch').addEventListener('input', (e) => {
+            renderSales(e.target.value);
+        });
+
+        document.getElementById('customerSearch').addEventListener('input', (e) => {
+            renderCustomers(e.target.value);
+        });
+
+        const salesCtx = document.getElementById('salesChart').getContext('2d');
+        salesChart = new Chart(salesCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Sales',
+                    data: [],
+                    borderColor: '#ff0000', /* Neon red */
+                    backgroundColor: 'rgba(255, 0, 0, 0.2)',
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        const taskCtx = document.getElementById('taskChart').getContext('2d');
+        taskChart = new Chart(taskCtx, {
+            type: 'pie',
+            data: {
+                labels: ['to do', 'in progress', 'completed'],
+                datasets: [{
+                    data: [],
+                    backgroundColor: ['#ff4081', '#ff0000', '#4caf50'] /* Adjusted for red accent */
+                }]
+            }
+        });
+
+        function setTheme(theme) {
+            if (theme === 'light') {
+                document.documentElement.style.setProperty('--bg-color', '#ffffff');
+                document.documentElement.style.setProperty('--text-color', '#000000');
+                document.documentElement.style.setProperty('--card-bg', '#f0f0f0');
+                document.documentElement.style.setProperty('--accent-color', '#ff0000'); /* Keep red accent */
+            } else {
+                document.documentElement.style.setProperty('--bg-color', '#121212');
+                document.documentElement.style.setProperty('--text-color', '#ffffff');
+                document.documentElement.style.setProperty('--card-bg', '#1f1f1f');
+                document.documentElement.style.setProperty('--accent-color', '#ff0000');
+            }
+        }
+
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        setTheme(savedTheme);
+        document.getElementById('theme').value = savedTheme;
+        document.getElementById('theme').addEventListener('change', (e) => {
+            const theme = e.target.value;
+            setTheme(theme);
+            localStorage.setItem('theme', theme);
+        });
+
+        updateCustomerSelects();
+        const initialSection = window.location.hash.substring(1) || 'dashboard';
+        showSection(initialSection);
+    </script>
+</body>
+</html>
